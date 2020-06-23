@@ -1,0 +1,282 @@
+!
+interface Management0/0
+ management-only
+ nameif management
+ security-level 100
+ ip address dhcp setroute
+!
+interface TenGigabitEthernet0/0
+ description OUTSIDE Interface
+ nameif outside
+ security-level 0
+ ip address dhcp setroute
+!
+interface TenGigabitEthernet0/1
+ description INSIDE Interface
+ nameif inside
+ security-level 100
+ ip address dhcp
+!
+ftp mode passive
+dns domain-lookup outside
+dns server-group DefaultDNS
+ name-server 208.67.222.222
+ name-server 208.67.220.220
+same-security-traffic permit inter-interface
+same-security-traffic permit intra-interface
+object network RAVPN_Hairpin
+ range 192.168.100.1 192.168.100.250
+ description #3-outside_Interface-Source
+object network NETWORK_OBJ_192.168.100.0_24
+ subnet 192.168.100.0 255.255.255.0
+ description #1-outside_Interface-Destination
+object network Inside_Subnet
+ subnet 10.10.11.0 255.255.255.0
+ description #1-inside_Interface-Source
+object network NETWORK_OBJ_10.10.110.69
+ host 10.10.110.69
+ description #2-outside_Interface-Destination
+object network NETWORK_OBJ_10.10.11.144
+ host 10.10.11.144
+ description #2-inside_Interface-Source
+access-list split standard permit 10.10.0.0 255.255.0.0
+access-list split standard permit 192.168.1.0 255.255.255.0
+access-list Split_Tunnel_List standard permit 10.10.11.0 255.255.255.0
+access-list outside_cryptomap extended permit ip host 10.10.11.144 host 10.10.110.69
+pager lines 23
+mtu management 1500
+mtu outside 1500
+mtu inside 1500
+no failover
+no failover wait-disable
+no monitor-interface service-module
+icmp unreachable rate-limit 1 burst-size 1
+asdm image disk0:/asdm.bin
+no asdm history enable
+arp timeout 14400
+no arp permit-nonconnected
+arp rate-limit 16384
+nat (inside,outside) source static Inside_Subnet Inside_Subnet destination static NETWORK_OBJ_192.168.100.0_24 NETWORK_OBJ_192.168.100.0_24 no-proxy-arp route-lookup
+nat (inside,outside) source static NETWORK_OBJ_10.10.11.144 NETWORK_OBJ_10.10.11.144 destination static NETWORK_OBJ_10.10.110.69 NETWORK_OBJ_10.10.110.69 no-proxy-arp route-lookup
+!
+object network RAVPN_Hairpin
+ nat (outside,outside) dynamic interface
+timeout xlate 3:00:00
+timeout pat-xlate 0:00:30
+timeout conn 1:00:00 half-closed 0:10:00 udp 0:02:00 sctp 0:02:00 icmp 0:00:02
+timeout sunrpc 0:10:00 h323 0:05:00 h225 1:00:00 mgcp 0:05:00 mgcp-pat 0:05:00
+timeout sip 0:30:00 sip_media 0:02:00 sip-invite 0:03:00 sip-disconnect 0:02:00
+timeout sip-provisional-media 0:02:00 uauth 0:05:00 absolute
+timeout tcp-proxy-reassembly 0:01:00
+timeout floating-conn 0:00:00
+timeout conn-holddown 0:00:15
+timeout igp stale-route 0:01:10
+user-identity default-domain LOCAL
+aaa authentication ssh console LOCAL
+aaa authentication login-history
+no snmp-server location
+no snmp-server contact
+crypto ipsec security-association pmtu-aging infinite
+crypto ca trustpoint _SmartCallHome_ServerCA
+ no validation-usage
+ crl configure
+crypto ca trustpoint VPN
+ enrollment self
+ fqdn vpn-poc.crhill.ciscops.cloud
+ keypair VPN
+ ignore-ipsec-keyusage
+ ignore-ssl-keyusage
+ crl configure
+crypto ca trustpool policy
+ auto-import
+crypto ca certificate chain _SmartCallHome_ServerCA
+ certificate ca 0509
+    308205b7 3082039f a0030201 02020205 09300d06 092a8648 86f70d01 01050500
+    3045310b 30090603 55040613 02424d31 19301706 0355040a 13105175 6f566164
+    6973204c 696d6974 6564311b 30190603 55040313 1251756f 56616469 7320526f
+    6f742043 41203230 1e170d30 36313132 34313832 3730305a 170d3331 31313234
+    31383233 33335a30 45310b30 09060355 04061302 424d3119 30170603 55040a13
+    1051756f 56616469 73204c69 6d697465 64311b30 19060355 04031312 51756f56
+    61646973 20526f6f 74204341 20323082 0222300d 06092a86 4886f70d 01010105
+    00038202 0f003082 020a0282 0201009a 18ca4b94 0d002daf 03298af0 0f81c8ae
+    4c19851d 089fab29 4485f32f 81ad321e 9046bfa3 86261a1e fe7e1c18 3a5c9c60
+    172a3a74 8333307d 615411cb edabe0e6 d2a27ef5 6b6f18b7 0a0b2dfd e93eef0a
+    c6b310e9 dcc24617 f85dfda4 daff9e49 5a9ce633 e62496f7 3fba5b2b 1c7a35c2
+    d667feab 66508b6d 28602bef d760c3c7 93bc8d36 91f37ff8 db1113c4 9c7776c1
+    aeb7026a 817aa945 83e205e6 b956c194 378f4871 6322ec17 6507958a 4bdf8fc6
+    5a0ae5b0 e35f5e6b 11ab0cf9 85eb44e9 f80473f2 e9fe5c98 8cf573af 6bb47ecd
+    d45c022b 4c39e1b2 95952d42 87d7d5b3 9043b76c 13f1dedd f6c4f889 3fd175f5
+    92c391d5 8a88d090 ecdc6dde 89c26571 968b0d03 fd9cbf5b 16ac92db eafe797c
+    adebaff7 16cbdbcd 252be51f fb9a9fe2 51cc3a53 0c48e60e bdc9b476 0652e611
+    13857263 0304e004 362b2019 02e874a7 1fb6c956 66f07525 dc67c10e 616088b3
+    3ed1a8fc a3da1db0 d1b12354 df44766d ed41d8c1 b222b653 1cdf351d dca1772a
+    31e42df5 e5e5dbc8 e0ffe580 d70b63a0 ff33a10f ba2c1515 ea97b3d2 a2b5bef2
+    8c961e1a 8f1d6ca4 6137b986 7333d797 969e237d 82a44c81 e2a1d1ba 675f9507
+    a32711ee 16107bbc 454a4cb2 04d2abef d5fd0c51 ce506a08 31f991da 0c8f645c
+    03c33a8b 203f6e8d 673d3ad6 fe7d5b88 c95efbcc 61dc8b33 77d34432 35096204
+    921610d8 9e2747fb 3b21e3f8 eb1d5b02 03010001 a381b030 81ad300f 0603551d
+    130101ff 04053003 0101ff30 0b060355 1d0f0404 03020106 301d0603 551d0e04
+    1604141a 8462bc48 4c332504 d4eed0f6 03c41946 d1946b30 6e060355 1d230467
+    30658014 1a8462bc 484c3325 04d4eed0 f603c419 46d1946b a149a447 3045310b
+    30090603 55040613 02424d31 19301706 0355040a 13105175 6f566164 6973204c
+    696d6974 6564311b 30190603 55040313 1251756f 56616469 7320526f 6f742043
+    41203282 02050930 0d06092a 864886f7 0d010105 05000382 0201003e 0a164d9f
+    065ba8ae 715d2f05 2f67e613 4583c436 f6f3c026 0c0db547 645df8b4 72c946a5
+    03182755 89787d76 ea963480 1720dce7 83f88dfc 07b8da5f 4d2e67b2 84fdd944
+    fc775081 e67cb4c9 0d0b7253 f8760707 4147960c fbe08226 93558cfe 221f6065
+    7c5fe726 b3f73290 9850d437 7155f692 2178f795 79faf82d 26876656 3077a637
+    78335210 58ae3f61 8ef26ab1 ef187e4a 5963ca8d a256d5a7 2fbc561f cf39c1e2
+    fb0aa815 2c7d4d7a 63c66c97 443cd26f c34a170a f890d257 a21951a5 2d9741da
+    074fa950 da908d94 46e13ef0 94fd1000 38f53be8 40e1b46e 561a20cc 6f588ded
+    2e458fd6 e9933fe7 b12cdf3a d6228cdc 84bb226f d0f8e4c6 39e90488 3cc3baeb
+    557a6d80 9924f56c 01fbf897 b0945beb fdd26ff1 77680d35 6423acb8 55a103d1
+    4d4219dc f8755956 a3f9a849 79f8af0e b911a07c b76aed34 d0b62662 381a870c
+    f8e8fd2e d3907f07 912a1dd6 7e5c8583 99b03808 3fe95ef9 3507e4c9 626e577f
+    a75095f7 bac89be6 8ea201c5 d666bf79 61f33c1c e1b9825c 5da0c3e9 d848bd19
+    a2111419 6eb2861b 683e4837 1a88b75d 965e9cc7 ef276208 e291195c d2f121dd
+    ba174282 97718153 31a99ff6 7d62bf72 e1a3931d cc8a265a 0938d0ce d70d8016
+    b478a53a 874c8d8a a5d54697 f22c10b9 bc5422c0 01506943 9ef4b2ef 6df8ecda
+    f1e3b1ef df918f54 2a0b25c1 2619c452 100565d5 8210eac2 31cd2e
+  quit
+crypto ca certificate chain VPN
+ certificate 1651c45e
+    308202d6 308201be a0030201 02020416 51c45e30 0d06092a 864886f7 0d01010b
+    0500302d 312b3029 06092a86 4886f70d 01090216 1c76706e 2d706f63 2e637268
+    696c6c2e 63697363 6f70732e 636c6f75 64301e17 0d323030 35323132 32333031
+    375a170d 33303035 31393232 33303137 5a302d31 2b302906 092a8648 86f70d01
+    0902161c 76706e2d 706f632e 63726869 6c6c2e63 6973636f 70732e63 6c6f7564
+    30820122 300d0609 2a864886 f70d0101 01050003 82010f00 3082010a 02820101
+    008d064e 48beb4f4 a784cb62 5f7ebde5 b331a151 899d05f0 70b2b403 bc35e2de
+    4a29fba2 4082233b 14f5ce2e 4113cd0c 76afd864 dcddc0fb 7496f99d 31d4bdd0
+    ae502328 fedbc727 60f7f246 cf96fdf1 ebe9bbbe 8df77c70 4dd334e2 5739403f
+    bb3d384f 7c818c1c c3f21216 125c9b4a 760c7f3d 46b57146 2edec919 82d5897d
+    2ccbc32b a4ee0c1b 2764a9f7 1c0e521d b290b835 c29695b3 9456d6f6 65e48ef2
+    c4e6abf1 845c3099 51492e25 ff6ea1e8 ce729cee c54596fa d75f9462 147e8dc0
+    e7330438 d6a449b0 22e27743 dd3f050c 1426d664 1aeda2a0 68340826 663f860a
+    2b06444c a3ed2c3a e475b6c5 c61428e7 caa5b8fb f3dcefb7 9b887386 22c96981
+    2b020301 0001300d 06092a86 4886f70d 01010b05 00038201 01006127 68cb37ea
+    a8a8efb6 4d2480fc fa1f2c5b dce50cc2 7532ce5f 77a19437 8092351f af7493d2
+    cf45b7cc aad015f1 6bfbaea3 24a33870 e9ee019b 0e1fdbb3 328a15dc ecaa1417
+    6d682206 5f6a212f dc466dc4 9775996a 0c925ee5 73026318 f6e94385 41c355cb
+    b0b3b6e2 7f012ce0 f0442438 603dd4ab b77cf04b 265b7335 71dac33a 0f827a67
+    e16064cc c500a9c4 d2919439 3ee4c0a9 2e62de8e 60de5e9a 3d13bd00 0b59469d
+    98c23fd7 a1706435 7aad16b6 a498d857 0a4727df 18343a80 a0e9e7bd d0beb063
+    8a2f20f2 cd99cefe 82602cf1 eece0986 bbfadc6c aae3d648 ef55c4b6 22463480
+    e2768a2e 4167fd42 3301be23 c8c306df f58f6e9a b5128ce6 d5ac
+  quit
+telnet timeout 5
+ssh stricthostkeycheck
+ssh 0.0.0.0 0.0.0.0 management
+ssh timeout 5
+ssh version 1 2
+ssh key-exchange group dh-group14-sha256
+console timeout 0
+management-access outside
+dhcp-client client-id interface outside
+threat-detection basic-threat
+threat-detection statistics access-list
+no threat-detection statistics tcp-intercept
+webvpn
+ enable outside tls-only
+ anyconnect-custom-attr dynamic-split-exclude-domains description Excluded domains from VPN Tunnel
+ http-headers
+  hsts-server
+   enable
+   max-age 31536000
+   include-sub-domains
+   no preload
+  hsts-client
+   enable
+  x-content-type-options
+  x-xss-protection
+  content-security-policy
+ anyconnect enable
+ tunnel-group-list enable
+ cache
+  disable
+ error-recovery disable
+anyconnect-custom-data dynamic-split-exclude-domains excluded-domains ipchicken.com, webex.com, webexconnect.com, tags.tiqcdn.com, cisco.com, office365.com
+group-policy DfltGrpPolicy attributes
+ vpn-tunnel-protocol ssl-clientless
+group-policy GroupPolicy_RAVPN internal
+group-policy GroupPolicy_RAVPN attributes
+ wins-server none
+ dns-server value 208.67.222.222 208.67.220.220
+ vpn-tunnel-protocol ssl-client
+ default-domain none
+group-policy LAB internal
+dynamic-access-policy-record DfltAccessPolicy
+username crhill password ***** pbkdf2
+username crhill attributes
+ service-type remote-access
+username craig-test password ***** pbkdf2
+username craig-test attributes
+ service-type remote-access
+username admin nopassword privilege 15
+tunnel-group RAVPN type remote-access
+tunnel-group RAVPN general-attributes
+ address-pool VPN_POOL
+ default-group-policy GroupPolicy_RAVPN
+tunnel-group RAVPN webvpn-attributes
+ group-alias RAVPN enable
+tunnel-group remote-access type remote-access
+tunnel-group remote-access general-attributes
+ address-pool VPN_POOL
+ default-group-policy LAB
+!
+class-map inspection_default
+ match default-inspection-traffic
+!
+!
+policy-map type inspect dns preset_dns_map
+ parameters
+  message-length maximum client auto
+  message-length maximum 512
+  no tcp-inspection
+policy-map global_policy
+ class inspection_default
+  inspect ip-options
+  inspect netbios
+  inspect rtsp
+  inspect sunrpc
+  inspect tftp
+  inspect xdmcp
+  inspect dns preset_dns_map
+  inspect ftp
+  inspect h323 h225
+  inspect h323 ras
+  inspect rsh
+  inspect esmtp
+  inspect sqlnet
+  inspect sip
+  inspect skinny
+policy-map type inspect dns migrated_dns_map_2
+ parameters
+  message-length maximum client auto
+  message-length maximum 512
+  no tcp-inspection
+policy-map type inspect dns migrated_dns_map_1
+ parameters
+  message-length maximum client auto
+  message-length maximum 512
+  no tcp-inspection
+!
+service-policy global_policy global
+prompt hostname context
+no call-home reporting anonymous
+call-home
+ profile CiscoTAC-1
+  no active
+  destination address http https://tools.cisco.com/its/service/oddce/services/DDCEService
+  destination address email callhome@cisco.com
+  destination transport-method http
+  subscribe-to-alert-group diagnostic
+  subscribe-to-alert-group environment
+  subscribe-to-alert-group inventory periodic monthly
+  subscribe-to-alert-group configuration periodic monthly
+  subscribe-to-alert-group telemetry periodic daily
+ profile License
+  destination address http https://tools.cisco.com/its/service/oddce/services/DDCEService
+  destination transport-method http
+Cryptochecksum:733a452f93b69e7e8d4d205454b1af83
+: end

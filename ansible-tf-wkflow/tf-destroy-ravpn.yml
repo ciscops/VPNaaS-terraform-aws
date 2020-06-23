@@ -1,0 +1,113 @@
+---
+
+- name: Run Terraform Module - Remote VPNaaS Orchestration
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  
+  tasks:
+  - name: Terraform Plan - Destroy ASAv Configuration
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/5_asav_deployment'
+      state: planned
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+      force_init: yes
+    tags: destroy_plan-4_aws_r53_frontend
+
+  - name: Terraform - DESTROY - ASAv Configuration
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/5_asav_deployment'
+      state: absent
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+    tags: destroy-5_asav_deployment
+  
+  - name: Terraform Plan - Route 53 Front End
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/4_aws_r53_frontend'
+      state: planned
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+      force_init: yes
+    tags: destroy_plan-4_aws_r53_frontend
+
+  - name: Terraform - DESTROY - Route 53 Front End
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/4_aws_r53_frontend'
+      state: absent
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+    tags: destroy-4_aws_r53_frontend
+  
+  - name: Terraform Plan - ASAv Configuration
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/3_asav_config'
+      state: planned
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+      force_init: yes
+    tags: destroy_plan-3_asav_config
+
+  - name: Terraform - DESTROY - ASAv Configuration
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/3_asav_config'
+      state: absent
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+    tags: destroy-3_asav_config
+  
+  - name: Terraform Plan - TGW Associations
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/2_tgw_associations'
+      state: planned
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+      force_init: yes
+    tags: destroy_plan-2_tgw_associations
+
+  - name: Terraform - DESTROY - TGW Associations
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/2_tgw_associations'
+      state: absent
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+    tags: destroy-2_tgw_associations
+
+  - name: Terraform Plan - AWS Network Provision (VPC)
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/1_aws_network'
+      state: planned
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+      force_init: yes
+    tags: destroy_plan-1-aws-network
+
+  - name: Terraform - Destroy VPC
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/1_aws_network'
+      state: absent
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+    tags: destroy-1-aws-network
+
+  - name: Terraform Plan - AWS SSH Key
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/0_aws_ssh_key'
+      state: planned
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+      force_init: yes
+    tags: destroy_plan-0-ssh-key
+
+  - name: Terraform - Destroy - AWS SSH Key
+    terraform:
+      project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/0_aws_ssh_key'
+      state: absent
+      plan_file: 'terraform.tfplan'
+      variables_file: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/variables/main.tfvars'
+    tags: destroy-0-ssh-key
+
+  #- meta: refresh_inventory
+  #  tags: always
+        

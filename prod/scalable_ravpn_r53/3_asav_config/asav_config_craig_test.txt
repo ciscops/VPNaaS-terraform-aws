@@ -1,0 +1,234 @@
+hostname ${hostname}
+!
+license smart
+ feature tier standard
+ throughput level ${license_throughput}
+ call-home
+  source-interface outside
+
+
+license smart register idtoken ${idtoken} force
+ip local pool VPN-POOL ${vpn_pool_from}-${vpn_pool_to} mask ${vpn_pool_mask}
+
+!
+interface Management0/0
+ management-only
+ nameif management
+ security-level 100
+ ip address dhcp setroute
+ no shut
+!
+interface TenGigabitEthernet0/1
+ description OUTSIDE Interface
+ nameif outside
+ security-level 0
+ ip address dhcp setroute
+ no shut
+!
+interface TenGigabitEthernet0/0
+ description INSIDE Interface
+ nameif inside
+ security-level 100
+ ip address dhcp
+ no shut
+!
+!
+ftp mode passive
+dns domain-lookup outside
+dns server-group DefaultDNS
+ name-server 208.67.222.222
+ name-server 208.67.220.220
+same-security-traffic permit inter-interface
+same-security-traffic permit intra-interface
+
+
+
+
+
+
+
+object network RAVPN_Hairpin
+ range 192.168.100.1 192.168.100.250
+ description #3-outside_Interface-Source
+object network NETWORK_OBJ_192.168.100.0_24
+ subnet 192.168.100.0 255.255.255.0
+ description #1-outside_Interface-Destination
+object network Inside_Subnet
+ subnet 10.10.11.0 255.255.255.0
+ description #1-inside_Interface-Source
+object network NETWORK_OBJ_10.10.110.69
+ host 10.10.110.69
+ description #2-outside_Interface-Destination
+object network NETWORK_OBJ_10.10.11.144
+ host 10.10.11.144
+ description #2-inside_Interface-Source
+access-list split standard permit 10.10.0.0 255.255.0.0
+access-list split standard permit 192.168.1.0 255.255.255.0
+access-list Split_Tunnel_List standard permit 10.10.11.0 255.255.255.0
+access-list outside_cryptomap extended permit ip host 10.10.11.144 host 10.10.110.69
+pager lines 23
+mtu management 1500
+mtu outside 1500
+mtu inside 1500
+no failover
+no failover wait-disable
+no monitor-interface service-module
+icmp unreachable rate-limit 1 burst-size 1
+asdm image disk0:/asdm.bin
+no asdm history enable
+arp timeout 14400
+no arp permit-nonconnected
+arp rate-limit 16384
+!
+nat (inside,outside) source static Inside_Subnet Inside_Subnet destination static NETWORK_OBJ_192.168.100.0_24 NETWORK_OBJ_192.168.100.0_24 no-proxy-arp route-lookup
+nat (inside,outside) source static NETWORK_OBJ_10.10.11.144 NETWORK_OBJ_10.10.11.144 destination static NETWORK_OBJ_10.10.110.69 NETWORK_OBJ_10.10.110.69 no-proxy-arp route-lookup
+!
+object network RAVPN_Hairpin
+ nat (outside,outside) dynamic interface
+timeout xlate 3:00:00
+timeout pat-xlate 0:00:30
+timeout conn 1:00:00 half-closed 0:10:00 udp 0:02:00 sctp 0:02:00 icmp 0:00:02
+timeout sunrpc 0:10:00 h323 0:05:00 h225 1:00:00 mgcp 0:05:00 mgcp-pat 0:05:00
+timeout sip 0:30:00 sip_media 0:02:00 sip-invite 0:03:00 sip-disconnect 0:02:00
+timeout sip-provisional-media 0:02:00 uauth 0:05:00 absolute
+timeout tcp-proxy-reassembly 0:01:00
+timeout floating-conn 0:00:00
+timeout conn-holddown 0:00:15
+timeout igp stale-route 0:01:10
+user-identity default-domain LOCAL
+aaa authentication ssh console LOCAL
+aaa authentication login-history
+no snmp-server location
+no snmp-server contact
+crypto ipsec security-association pmtu-aging infinite
+crypto ca trustpoint _SmartCallHome_ServerCA
+ no validation-usage
+ crl configure
+crypto ca trustpoint VPN
+ enrollment self
+ fqdn vpn-poc.crhill.ciscops.cloud
+ keypair VPN
+ ignore-ipsec-keyusage
+ ignore-ssl-keyusage
+ crl configure
+crypto ca trustpool policy
+ auto-import
+
+telnet timeout 5
+ssh stricthostkeycheck
+ssh 0.0.0.0 0.0.0.0 management
+ssh timeout 5
+ssh version 1 2
+ssh key-exchange group dh-group14-sha256
+console timeout 0
+management-access outside
+dhcp-client client-id interface outside
+threat-detection basic-threat
+threat-detection statistics access-list
+no threat-detection statistics tcp-intercept
+!
+webvpn
+ enable outside tls-only
+ anyconnect-custom-attr dynamic-split-exclude-domains description Excluded domains from VPN Tunnel
+ http-headers
+  hsts-server
+   enable
+   max-age 31536000
+   include-sub-domains
+   no preload
+  hsts-client
+   enable
+  x-content-type-options
+  x-xss-protection
+  content-security-policy
+ anyconnect enable
+ tunnel-group-list enable
+ cache
+  disable
+ error-recovery disable
+!
+anyconnect-custom-data dynamic-split-exclude-domains excluded-domains ipchicken.com, webex.com, webexconnect.com, tags.tiqcdn.com, cisco.com, office365.com
+group-policy DfltGrpPolicy attributes
+ vpn-tunnel-protocol ssl-clientless
+group-policy GroupPolicy_RAVPN internal
+group-policy GroupPolicy_RAVPN attributes
+ wins-server none
+ dns-server value 208.67.222.222 208.67.220.220
+ vpn-tunnel-protocol ssl-client
+ default-domain none
+group-policy LAB internal
+dynamic-access-policy-record DfltAccessPolicy
+username crhill password ***** pbkdf2
+username crhill attributes
+ service-type remote-access
+username craig-test password ***** pbkdf2
+username craig-test attributes
+ service-type remote-access
+username admin nopassword privilege 15
+tunnel-group RAVPN type remote-access
+tunnel-group RAVPN general-attributes
+ address-pool VPN_POOL
+ default-group-policy GroupPolicy_RAVPN
+tunnel-group RAVPN webvpn-attributes
+ group-alias RAVPN enable
+tunnel-group remote-access type remote-access
+tunnel-group remote-access general-attributes
+ address-pool VPN_POOL
+ default-group-policy LAB
+!
+class-map inspection_default
+ match default-inspection-traffic
+!
+!
+policy-map type inspect dns preset_dns_map
+ parameters
+  message-length maximum client auto
+  message-length maximum 512
+  no tcp-inspection
+policy-map global_policy
+ class inspection_default
+  inspect ip-options
+  inspect netbios
+  inspect rtsp
+  inspect sunrpc
+  inspect tftp
+  inspect xdmcp
+  inspect dns preset_dns_map
+  inspect ftp
+  inspect h323 h225
+  inspect h323 ras
+  inspect rsh
+  inspect esmtp
+  inspect sqlnet
+  inspect sip
+  inspect skinny
+policy-map type inspect dns migrated_dns_map_2
+ parameters
+  message-length maximum client auto
+  message-length maximum 512
+  no tcp-inspection
+policy-map type inspect dns migrated_dns_map_1
+ parameters
+  message-length maximum client auto
+  message-length maximum 512
+  no tcp-inspection
+!
+service-policy global_policy global
+prompt hostname context
+no call-home reporting anonymous
+call-home
+ profile CiscoTAC-1
+  no active
+  destination address http https://tools.cisco.com/its/service/oddce/services/DDCEService
+  destination address email callhome@cisco.com
+  destination transport-method http
+  subscribe-to-alert-group diagnostic
+  subscribe-to-alert-group environment
+  subscribe-to-alert-group inventory periodic monthly
+  subscribe-to-alert-group configuration periodic monthly
+  subscribe-to-alert-group telemetry periodic daily
+ profile License
+  destination address http https://tools.cisco.com/its/service/oddce/services/DDCEService
+  destination transport-method http
+Cryptochecksum:733a452f93b69e7e8d4d205454b1af83
+: end
