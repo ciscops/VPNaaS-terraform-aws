@@ -1,7 +1,10 @@
 #global 
 aws-region = "us-east-2"
 
-
+# SSH Key Variables
+ssh-key-name =  "add... "
+ssh-key =  "add ..."
+#To be filled out
 
 #VPC Parameters
 main-cidr = "10.0.0.0/8" #required for transit-gw (in case if there are multiple vpcs the main /8 subnet will be routed through TGW)
