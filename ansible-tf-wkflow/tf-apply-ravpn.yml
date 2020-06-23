@@ -15,7 +15,7 @@
       force_init: yes
     tags: plan-0-ssh-key
 
-  - name: Terraform - Apply
+  - name: Terraform - Apply - AWS SSH Key
     terraform:
       project_path: '$HOME/coding/github.com/ciscops/TerraformBluePrints/prod/scalable_ravpn_r53/0_aws_ssh_key'
       state: present
