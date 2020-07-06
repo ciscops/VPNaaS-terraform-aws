@@ -2,7 +2,7 @@
 aws-region = "us-east-2"
 
 # SSH Key Variables
-ssh-key-name =  "add... "
+ssh-key-name =  "add ... "
 ssh-key =  "add ..."
 #To be filled out
 
