@@ -31,7 +31,7 @@ While these versions will continue to change and evolve, for the end to end play
 
 #### Cisco TME Reference
 
-I would like to thank the Cisco Netsec TME Design Team for their excellent work on the remote access VPN efforts at the [Terraform Blueprints Repository] (https://github.com/netsec-design/TerraformBluePrints), and thanks for their inspiration to to me to test this effort and evolve it.
+I would like to thank the Cisco Netsec TME Design Team for their excellent work on the remote access VPN efforts at the [Terraform Blueprints Repository](https://github.com/netsec-design/TerraformBluePrints), and thanks for their inspiration to to me to test this effort and evolve it.
 
 #### References
 
